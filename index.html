@@ -1,0 +1,189 @@
+<!doctype html>
+<html lang="pt-br">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Status de Férias — com contador</title>
+<style>
+  :root { --sun:#ffd166; --sea:#118ab2; --sand:#ffd9a0; --ink:#0f172a; }
+  * { box-sizing:border-box; }
+  body{
+    margin:0; min-height:100vh; display:grid; place-items:center;
+    font:500 16px/1.4 system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+    color:var(--ink);
+    background:
+      radial-gradient(120vmax 60vmax at 100% -20%, var(--sun), transparent 60%),
+      linear-gradient(#e0f7ff, #b3ecff 40%, var(--sea) 41%, var(--sea) 60%, var(--sand) 60%);
+  }
+  .card{
+    background:#fff; border:1px solid #e5e7eb; border-radius:16px;
+    padding:24px 28px; width:min(640px, 92vw);
+    box-shadow:0 10px 30px rgba(2,6,23,.08);
+    position:relative; overflow:hidden;
+  }
+  .badge{
+    display:inline-flex; align-items:center; gap:8px;
+    font-weight:700; letter-spacing:.2px;
+    padding:6px 10px; border-radius:999px; background:#eef2ff; color:#3730a3;
+  }
+  .title{ margin:14px 0 6px; font-size:clamp(22px,3.5vw,28px); font-weight:800; display:flex; gap:.4ch; }
+  .cursor{ width:.7ch; border-right:2px solid currentColor; animation:blink 1s steps(1) infinite; }
+  @keyframes blink { 50% { border-color:transparent } }
+  .meta{ color:#475569; margin-bottom:16px }
+  .pill{
+    display:inline-block; padding:6px 10px; border-radius:999px; background:#f1f5f9; color:#0f172a;
+    font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+  }
+  .footer{ display:flex; gap:10px; flex-wrap:wrap; margin-top:14px; color:#334155 }
+  code{ background:#0f172a; color:#e2e8f0; padding:3px 6px; border-radius:6px }
+  .countdown{ font-size:18px; font-weight:800; color:#0f172a; margin-top:12px }
+  .funny{ font-size:14px; color:#475569; margin-top:6px; font-style:italic }
+  .bar-wrap{ margin-top:10px; height:10px; background:#e2e8f0; border-radius:999px; overflow:hidden }
+  .bar{ height:100%; width:0%; background:#118ab2; transition:width .3s ease }
+  .ok{ margin-top:8px; font-size:12px; color:#16a34a }
+
+  /* ====== BLOCO DE FOTO (agora com FLEX, sem sobreposição) ====== */
+  .profile{
+    display:flex; align-items:center; gap:16px;
+    margin:14px 0 6px;
+  }
+  .photo{
+    flex:0 0 96px; width:96px; height:96px; border-radius:16px; overflow:hidden;
+    border:2px solid #e5e7eb; box-shadow:0 6px 14px rgba(2,6,23,.08);
+    background:#f8fafc;
+  }
+  .photo img{ width:100%; height:100%; object-fit:cover; display:block; }
+  .legend{ flex:1 1 auto; min-width:0; display:flex; flex-direction:column; gap:4px; }
+  .legend .name{ font-weight:800; color:#0f172a; line-height:1.2; }
+  .legend .subtitle{ font-size:13px; color:#475569; line-height:1.2; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+
+  /* Ajuste do TODO para não “colar” na foto */
+  .profile + .pill{ margin-top:12px; }
+  @media (max-width: 480px){
+    .profile{ align-items:flex-start; }
+    .legend .subtitle{ white-space:normal; }
+  }
+</style>
+
+<script defer>
+document.addEventListener('DOMContentLoaded', function(){
+  // ===== CONFIG - início das férias fixo =====
+  const startDate = new Date(2025, 7, 18); // 18/08/2025 (mês 7 = agosto)
+  startDate.setHours(0,0,0,0);
+  const endDate = new Date(startDate.getTime() + 15*24*60*60*1000);
+
+  // ===== ELEMENTOS =====
+  const card = document.querySelector('.card');
+  const countdownEl = document.getElementById('countdown');
+  const funnyEl = document.getElementById('funny');
+  const bar = document.getElementById('bar');
+
+  // Indicador de JS ok
+  let ok = document.getElementById('ok');
+  if (!ok) {
+    ok = document.createElement('div');
+    ok.id = 'ok';
+    ok.className = 'ok';
+    const footer = document.querySelector('.footer');
+    card.insertBefore(ok, footer);
+  }
+  ok.textContent = '✅ JavaScript rodando';
+
+  const funnyTexts = [
+    "☀️ Ainda dá tempo de pegar mais um bronze!",
+    "🍹 Hora de mais um drink com guarda-chuvinha!",
+    "🏝️ Se fosse um sprint, estaria no meio do caminho!",
+    "🦀 Já fez amizade com um siri hoje?",
+    "📸 Poste mais fotos para causar inveja no time!",
+    "🛫 A contagem regressiva para o retorno começou...",
+    "💻 Não abra o VSCode, resista!",
+    "🌊 Última chamada para mergulhar antes do fim!"
+  ];
+
+  function clamp(n,min,max){ return Math.max(min, Math.min(max, n)); }
+
+  function update(){
+    const now = new Date();
+    const total = endDate - startDate;
+    const diff = endDate - now;
+
+    if (now < startDate){
+      const toStart = startDate - now;
+      const dS = Math.floor(toStart/86400000);
+      const hS = Math.floor((toStart/3600000)%24);
+      const mS = Math.floor((toStart/60000)%60);
+      const sS = Math.floor((toStart/1000)%60);
+      countdownEl.textContent = `⏳ Férias começam em ${dS}d ${hS}h ${mS}m ${sS}s.`;
+      funnyEl.textContent = "🧳 Preparando as malas...";
+      bar.style.width = "0%";
+      return;
+    }
+
+    if (diff <= 0){
+      countdownEl.textContent = "⏳ Férias encerradas!";
+      funnyEl.textContent = "😢 Hora de dar commit no retorno.";
+      bar.style.width = "100%";
+      return;
+    }
+
+    const d = Math.floor(diff/86400000);
+    const h = Math.floor((diff/3600000)%24);
+    const m = Math.floor((diff/60000)%60);
+    const s = Math.floor((diff/1000)%60);
+
+    countdownEl.textContent = `⏳ Faltam ${d}d ${h}h ${m}m ${s}s para o deploy do retorno.`;
+    funnyEl.textContent = funnyTexts[Math.floor(Math.random()*funnyTexts.length)];
+    bar.style.width = (clamp(1 - diff/total, 0, 1) * 100).toFixed(2) + '%';
+  }
+
+  update();
+  setInterval(update, 1000);
+});
+</script>
+</head>
+
+<body>
+  <main class="card" aria-live="polite">
+    <span class="badge">🏖️ Em Férias</span>
+
+    <!-- FOTO (troque o src pela sua imagem) -->
+    <section class="profile" aria-label="Foto e identificação">
+      <div class="photo">
+        <img
+          src="https://scontent.fpoj7-1.fna.fbcdn.net/v/t39.30808-6/492892936_29979408481646173_2706048638605136423_n.jpg?_nc_cat=108&ccb=1-7&_nc_sid=6ee11a&_nc_ohc=GXoSkTqxPecQ7kNvwGtYdNg&_nc_oc=AdlvYkP1OIy-xHbl5QWWZuajvKtHM0rZ3aS1wWMqg8G5TuDGsmnW633_R52QflAC-EQ&_nc_zt=23&_nc_ht=scontent.fpoj7-1.fna&_nc_gid=SggGSOKXVrbRuXHKx0UEoA&oh=00_AfWB4zFkQ_ZHL_RVksmuOBYMO7JuMHOVcm2wsPU1S5204A&oe=68A2863A"
+          alt="Foto engraçada do Wellington curtindo as férias"
+          loading="lazy"
+          decoding="async"
+        />
+      </div>
+      <div class="legend">
+        <div class="name">Well em modo férias, descobrindo o mundo real</div>
+        <div class="subtitle">Status: AFK até completar 15 dias a partir de 18/08/2025</div>
+      </div>
+    </section>
+
+    <!-- TODO fora do bloco da foto -->
+    <p class="pill">// TODO: voltar com versão <strong>relax 1.0.0</strong></p>
+
+    <h1 class="title">
+      AFK por 15 dias <span class="cursor" aria-hidden="true"></span>
+    </h1>
+
+    <p class="meta">
+      Aplicando <strong>patch</strong> de sol, <strong>refatorando</strong> a energia e fazendo
+      <code>debug</code> da vitamina D.
+    </p>
+
+    <div id="countdown" class="countdown" aria-live="polite"></div>
+    <div class="bar-wrap" aria-hidden="true"><div id="bar" class="bar"></div></div>
+    <div id="funny" class="funny"></div>
+
+    <div class="footer">
+      <span>🧩 Bugs encontrados serão tratados como <em>easter eggs</em>.</span>
+      <span>🪄 Se algo quebrar: <code>console.log("Vai dar tudo certo")</code></span>
+    </div>
+  </main>
+
+  <noscript>Ative o JavaScript para ver o contador das férias 😅</noscript>
+</body>
+</html>
