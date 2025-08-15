@@ -4,45 +4,40 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Status de Férias do Wellzito Brabo!</title>
-<link rel="icon" type="image/png" href="src/image/favicon.ico">
+<link rel="icon" type="image/png" href="src/image/favicon.ico" />
 <style>
   :root { --sun:#ffd166; --sea:#118ab2; --sand:#ffd9a0; --ink:#0f172a; }
   * { box-sizing:border-box; }
+
   body{
     margin:0; min-height:100vh; display:grid; place-items:center;
-    font:500 16px/1.4 system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+    font:500 16px/1.4 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
     color:var(--ink);
     background:
       radial-gradient(120vmax 60vmax at 100% -20%, var(--sun), transparent 60%),
       linear-gradient(#e0f7ff, #b3ecff 40%, var(--sea) 41%, var(--sea) 60%, var(--sand) 60%);
   }
+
   .card{
-    background:#fff;
-    border:1px solid #e5e7eb;
-    border-radius:16px;
-    padding:24px 28px;
-    width:min(640px, 92vw);
+    background:#fff; border:1px solid #e5e7eb; border-radius:16px;
+    padding:24px 28px; width:min(640px, 92vw);
     box-shadow:0 10px 30px rgba(2,6,23,.08);
-    position:relative; /* necessário para o pseudo-elemento */
-    overflow:hidden;   /* respeitar o border-radius */
+    position:relative; overflow:hidden;
   }
-  /* ===== IMAGEM TRANSPARENTE NO FUNDO ===== */
+  /* ===== watermark dentro do card ===== */
   .card::after{
     content:"";
-    position:absolute;
-    inset:0;
-    background:
-      url("src/image/pixel-perfect.png") center/70% no-repeat;
-    opacity:.06; /* transparência da imagem */
-    pointer-events:none; /* não atrapalha cliques */
+    position:absolute; inset:0;
+    background:url("src/image/pixel-perfect.png") center/70% no-repeat;
+    opacity:.06;
+    pointer-events:none;
   }
 
   .badge{
     display:inline-flex; align-items:center; gap:8px;
     font-weight:700; letter-spacing:.2px;
     padding:6px 10px; border-radius:999px; background:#eef2ff; color:#3730a3;
-    position:relative; /* para ficar acima do ::after */
-    z-index:1;
+    position:relative; z-index:1;
   }
   .title{ margin:14px 0 6px; font-size:clamp(22px,3.5vw,28px); font-weight:800; display:flex; gap:.4ch; position:relative; z-index:1; }
   .cursor{ width:.7ch; border-right:2px solid currentColor; animation:blink 1s steps(1) infinite; }
@@ -50,7 +45,7 @@
   .meta{ color:#475569; margin-bottom:16px; position:relative; z-index:1; }
   .pill{
     display:inline-block; padding:6px 10px; border-radius:999px; background:#f1f5f9; color:#0f172a;
-    font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+    font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;
     position:relative; z-index:1;
   }
   .footer{ display:flex; gap:10px; flex-wrap:wrap; margin-top:14px; color:#334155; position:relative; z-index:1; }
@@ -61,11 +56,10 @@
   .bar{ height:100%; width:0%; background:#118ab2; transition:width .3s ease }
   .ok{ margin-top:8px; font-size:12px; color:#16a34a; position:relative; z-index:1; }
 
-  /* ====== BLOCO DE FOTO ====== */
+  /* ====== Foto / perfil ====== */
   .profile{
     display:flex; align-items:center; gap:16px;
-    margin:14px 0 6px;
-    position:relative; z-index:1;
+    margin:14px 0 6px; position:relative; z-index:1;
   }
   .photo{
     flex:0 0 96px; width:96px; height:96px; border-radius:16px; overflow:hidden;
@@ -81,19 +75,44 @@
     .profile{ align-items:flex-start; }
     .legend .subtitle{ white-space:normal; }
   }
+
+  /* ====== comentários ====== */
+  .comments { margin-top:22px; position:relative; z-index:1; }
+  .comments h2 { font-size:18px; margin:0 0 8px; }
+  #comment-form { display:flex; flex-direction:column; gap:8px; }
+  #comment-input{
+    padding:10px; border:1px solid #e5e7eb; border-radius:8px;
+    min-height:70px; resize:vertical; background:#f8fafc;
+  }
+  #comment-name{
+    padding:8px; border:1px solid #e5e7eb; border-radius:8px; background:#fff;
+  }
+  #comment-form button{
+    align-self:flex-end; padding:8px 14px; border:none; border-radius:8px;
+    background:#118ab2; color:#fff; font-weight:800; cursor:pointer;
+  }
+  #comment-form button:hover{ filter:brightness(.95); }
+  #comment-list{ margin-top:12px; list-style:none; padding:0; display:flex; flex-direction:column; gap:8px; }
+  .comment{
+    background:#f1f5f9; border:1px solid #e5e7eb; border-radius:10px; padding:10px;
+  }
+  .comment .meta{ margin:0 0 4px; font-size:12px; color:#64748b; }
 </style>
 
 <script defer>
 document.addEventListener('DOMContentLoaded', function(){
-  const startDate = new Date(2025, 7, 18);
+  // ===== Datas =====
+  const startDate = new Date(2025, 7, 18); // 18/08/2025
   startDate.setHours(0,0,0,0);
   const endDate = new Date(startDate.getTime() + 15*24*60*60*1000);
 
+  // ===== Elementos =====
   const card = document.querySelector('.card');
   const countdownEl = document.getElementById('countdown');
   const funnyEl = document.getElementById('funny');
   const bar = document.getElementById('bar');
 
+  // Indicador de JS ok
   let ok = document.getElementById('ok');
   if (!ok) {
     ok = document.createElement('div');
@@ -153,6 +172,46 @@ document.addEventListener('DOMContentLoaded', function(){
 
   update();
   setInterval(update, 1000);
+
+  // ===== COMENTÁRIOS (localStorage) =====
+  const commentForm = document.getElementById('comment-form');
+  const commentInput = document.getElementById('comment-input');
+  const commentName = document.getElementById('comment-name');
+  const commentList = document.getElementById('comment-list');
+
+  const STORAGE_KEY = 'ferias-well-comments-v1';
+  const comments = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+  comments.forEach(renderComment);
+
+  commentForm.addEventListener('submit', function(e){
+    e.preventDefault();
+    const text = commentInput.value.trim();
+    const name = (commentName.value || 'Anônimo').trim();
+    if (!text) return;
+
+    const item = { id: Date.now(), name, text, date: new Date().toISOString() };
+    comments.push(item);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(comments));
+    renderComment(item);
+
+    commentInput.value = '';
+  });
+
+  function renderComment(item){
+    const li = document.createElement('li');
+    li.className = 'comment';
+    const date = new Date(item.date);
+    li.innerHTML = `
+      <div class="meta">${item.name} • ${date.toLocaleDateString()} ${date.toLocaleTimeString()}</div>
+      <div>${escapeHtml(item.text)}</div>
+    `;
+    commentList.prepend(li); // mais novo em cima
+  }
+
+  // simples proteção contra HTML indesejado
+  function escapeHtml(str){
+    return str.replace(/[&<>"']/g, s => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[s]));
+  }
 });
 </script>
 </head>
@@ -161,6 +220,7 @@ document.addEventListener('DOMContentLoaded', function(){
   <main class="card" aria-live="polite">
     <span class="badge">🏖️ Em Férias</span>
 
+    <!-- FOTO -->
     <section class="profile" aria-label="Foto e identificação">
       <div class="photo">
         <img
@@ -195,6 +255,17 @@ document.addEventListener('DOMContentLoaded', function(){
       <span>🧩 Bugs encontrados serão tratados como <em>easter eggs</em>.</span>
       <span>🪄 Se algo quebrar: <code>console.log("Vai dar tudo certo")</code></span>
     </div>
+
+    <!-- ===== Área de comentários ===== -->
+    <section class="comments" aria-label="Área de comentários">
+      <h2>💬 Comentários</h2>
+      <form id="comment-form">
+        <input id="comment-name" type="text" placeholder="Seu nome (opcional)" />
+        <textarea id="comment-input" placeholder="Escreva seu comentário..." required></textarea>
+        <button type="submit">Enviar</button>
+      </form>
+      <ul id="comment-list"></ul>
+    </section>
   </main>
 
   <noscript>Ative o JavaScript para ver o contador das férias 😅</noscript>
